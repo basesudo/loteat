@@ -65,39 +65,39 @@ service/Homestead.yaml
 service/auth.json
 
 # =============================================================================
-# 前端忽略 (customer-web/)
+# 前端忽略 (app/)
 # =============================================================================
 
 # Node 依赖
-customer-web/node_modules/
-customer-web/.pnp
-customer-web/.pnp.js
+app/node_modules/
+app/.pnp
+app/.pnp.js
 
 # 测试
-customer-web/coverage/
+app/coverage/
 
 # Next.js 构建输出
-customer-web/.next/
-customer-web/out/
-customer-web/build/
+app/.next/
+app/out/
+app/build/
 
 # 环境配置
-customer-web/.env.local
-customer-web/.env.development.local
-customer-web/.env.test.local
-customer-web/.env.production.local
+app/.env.local
+app/.env.development.local
+app/.env.test.local
+app/.env.production.local
 
 # 调试日志
-customer-web/npm-debug.log*
-customer-web/yarn-debug.log*
-customer-web/yarn-error.log*
-customer-web/.pnpm-debug.log*
+app/npm-debug.log*
+app/yarn-debug.log*
+app/yarn-error.log*
+app/.pnpm-debug.log*
 
 # Vercel
-customer-web/.vercel
+app/.vercel
 
 # TypeScript
-customer-web/*.tsbuildinfo
+app/*.tsbuildinfo
 
 # =============================================================================
 # Docker 忽略
