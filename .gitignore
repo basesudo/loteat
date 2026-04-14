@@ -1,0 +1,133 @@
+# =============================================================================
+# Loteat 项目 Git 忽略配置
+# 采用方案 A：根目录一个 Git 仓库管理前后端
+# =============================================================================
+
+# =============================================================================
+# 全局忽略
+# =============================================================================
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+!.vscode/settings.json
+*.sublime-project
+*.sublime-workspace
+
+# =============================================================================
+# 后端忽略 (service/)
+# =============================================================================
+
+# PHP 依赖
+service/vendor/
+service/composer.phar
+
+# Node 依赖
+service/node_modules/
+service/npm-debug.log
+service/yarn-error.log
+
+# 环境配置
+service/.env
+service/.env.backup
+service/.env.production
+service/.env.testing
+
+# 存储和缓存
+service/storage/*.key
+service/storage/app/public/*
+!service/storage/app/public/.gitignore
+service/storage/app/temp/*
+service/storage/debugbar/*
+service/storage/framework/cache/*
+service/storage/framework/sessions/*
+service/storage/framework/testing/*
+service/storage/framework/views/*
+service/storage/logs/*
+!service/storage/logs/.gitignore
+service/bootstrap/cache/*
+!service/bootstrap/cache/.gitignore
+
+# 上传文件（可选：如果不需要跟踪示例图片）
+# service/public/storage
+
+# Laravel 特定
+service/public/hot
+service/public_html/storage
+service/public_html/hot
+service/.phpunit.result.cache
+service/Homestead.json
+service/Homestead.yaml
+service/auth.json
+
+# =============================================================================
+# 前端忽略 (customer-web/)
+# =============================================================================
+
+# Node 依赖
+customer-web/node_modules/
+customer-web/.pnp
+customer-web/.pnp.js
+
+# 测试
+customer-web/coverage/
+
+# Next.js 构建输出
+customer-web/.next/
+customer-web/out/
+customer-web/build/
+
+# 环境配置
+customer-web/.env.local
+customer-web/.env.development.local
+customer-web/.env.test.local
+customer-web/.env.production.local
+
+# 调试日志
+customer-web/npm-debug.log*
+customer-web/yarn-debug.log*
+customer-web/yarn-error.log*
+customer-web/.pnpm-debug.log*
+
+# Vercel
+customer-web/.vercel
+
+# TypeScript
+customer-web/*.tsbuildinfo
+
+# =============================================================================
+# Docker 忽略
+# =============================================================================
+docker-compose.override.yml
+.env.docker
+
+# Docker 数据卷（如果本地测试产生）
+mysql_data/
+redis_data/
+
+# =============================================================================
+# 数据库备份（可选：如果备份文件太大）
+# =============================================================================
+# service/installation/backup/database.sql
+# *.sql
+
+# =============================================================================
+# 其他
+# =============================================================================
+*.zip
+*.tar.gz
+*.rar
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+
+# 系统文件
+.DS_Store
+.AppleDouble
+.LSOverride

@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # PHP 服务
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: loteat_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - loteat_network
+    depends_on:
+      - db
+      - redis
+    command: >
+      sh -c "
+        if [ ! -L /var/www/html/public/storage ]; then
+          rm -rf /var/www/html/public/storage &&
+          php artisan storage:link;
+        fi &&
+        php-fpm
+      "
+
+  # Nginx 服务
+  nginx:
+    image: nginx:alpine
+    container_name: loteat_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - loteat_network
+    depends_on:
+      - app
+
+  # MySQL 数据库
+  db:
+    image: mysql:8.0
+    container_name: loteat_db
+    restart: unless-stopped
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_DATABASE: multi_food_db
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_USER: loteat
+      MYSQL_PASSWORD: loteat123456
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./installation/backup/database.sql:/docker-entrypoint-initdb.d/01-database.sql
+    networks:
+      - loteat_network
+    command: --default-authentication-plugin=mysql_native_password
+
+  # Redis 缓存
+  redis:
+    image: redis:alpine
+    container_name: loteat_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - loteat_network
+
+  # phpMyAdmin（可选，方便管理数据库）
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: loteat_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root123456
+    networks:
+      - loteat_network
+    depends_on:
+      - db
+
+networks:
+  loteat_network:
+    driver: bridge
+
+volumes:
+  db_data:
