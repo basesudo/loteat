@@ -83,10 +83,10 @@ class ConfigController extends Controller
 
 
         $currency_symbol = Currency::where(['currency_code' => Helpers::currency_code()])->first()->currency_symbol;
-        $cod = json_decode($settings['cash_on_delivery'], true);
-        $agency_payment = json_decode($settings['agency_payment_status'], true);
-        $add_fund_payment_status = json_decode($settings['add_fund_payment_status'], true);
-        $digital_payment = json_decode($settings['digital_payment'], true);
+        $cod = json_decode($settings['cash_on_delivery'] ?? '{}', true);
+        $agency_payment = json_decode($settings['agency_payment_status'] ?? '{}', true);
+        $add_fund_payment_status = json_decode($settings['add_fund_payment_status'] ?? '{}', true);
+        $digital_payment = json_decode($settings['digital_payment'] ?? '{}', true);
         $default_location = isset($settings['default_location']) ? json_decode($settings['default_location'], true) : 0;
         $free_delivery_over = $settings['free_delivery_over'];
         $free_delivery_over = isset($free_delivery_over) ? (float)$free_delivery_over : $free_delivery_over;
@@ -238,12 +238,12 @@ class ConfigController extends Controller
             'app_url_ios_deliveryman' => (isset($settings['app_url_ios_deliveryman']) ? $settings['app_url_ios_deliveryman'] : null),
             'customer_verification' => (boolean)$settings['customer_verification'],
             'prescription_order_status' => isset($settings['prescription_order_status']) ? (boolean)$settings['prescription_order_status'] : false,
-            'schedule_order' => (boolean)$settings['schedule_order'],
-            'order_delivery_verification' => (boolean)$settings['order_delivery_verification'],
-            'cash_on_delivery' => (boolean)($cod['status'] == 1 ? true : false),
-            'agency_payment' => (boolean)($agency_payment['status'] == 1 ? true : false),
-            'add_fund_payment_status' => (boolean)($add_fund_payment_status['status'] == 1 ? true : false),
-            'digital_payment' => (boolean)($digital_payment['status'] == 1 ? true : false),
+            'schedule_order' => isset($settings['schedule_order']) ? (boolean)$settings['schedule_order'] : false,
+            'order_delivery_verification' => isset($settings['order_delivery_verification']) ? (boolean)$settings['order_delivery_verification'] : false,
+            'cash_on_delivery' => (boolean)(($cod['status'] ?? 0) == 1 ? true : false),
+            'agency_payment' => (boolean)(($agency_payment['status'] ?? 0) == 1 ? true : false),
+            'add_fund_payment_status' => (boolean)(($add_fund_payment_status['status'] ?? 0) == 1 ? true : false),
+            'digital_payment' => (boolean)(($digital_payment['status'] ?? 0) == 1 ? true : false),
             'digital_payment_info' => $digital_payment_infos,
             'per_km_shipping_charge' => (double)$settings['per_km_shipping_charge'],
             'minimum_shipping_charge' => (double)$settings['minimum_shipping_charge'],

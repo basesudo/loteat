@@ -347,6 +347,123 @@ docker-compose up -d --build <service>
 
 ---
 
+## 问题八：前端报错 "fetch failed" 或 "is not valid JSON"
+
+### 现象
+访问前端页面时，Next.js 报错：
+```
+TypeError: fetch failed
+```
+或
+```
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+```
+
+### 原因分析
+
+1. **后端 API 地址配置错误**：前端 `.env.development` 中的 `NEXT_PUBLIC_BASE_URL` 指向了错误的后端地址
+2. **后端服务未启动**：Docker 容器没有运行
+3. **后端 API 返回错误页面**：后端代码报错，返回 HTML 错误页面而不是 JSON
+
+### 解决方案
+
+#### 1. 检查后端 API 地址配置
+
+确认 `app/.env.development` 中的配置：
+```env
+NEXT_PUBLIC_BASE_URL=http://localhost:8080  # 必须是后端 Nginx 地址
+NEXT_CLIENT_HOST_URL=http://localhost:3000
+```
+
+**注意**：修改后需要重启前端开发服务器！
+
+#### 2. 检查后端服务是否运行
+
+```bash
+docker-compose ps
+```
+
+确保 `loteat_nginx` 和 `loteat_app` 容器状态为 `Up`。
+
+#### 3. 测试后端 API
+
+```bash
+curl http://localhost:8080/api/v1/config
+```
+
+- 如果返回 JSON 数据，说明后端正常
+- 如果返回 HTML 或 500 错误，查看后端日志：
+
+```bash
+docker-compose exec app tail -50 /var/www/html/service/storage/logs/laravel.log
+```
+
+---
+
+## 问题九：后端 API 报错 "Undefined array key"
+
+### 现象
+后端日志中出现错误：
+```
+Undefined array key "agency_payment_status"
+Undefined array key "status"
+```
+
+或前端看到 `500 Internal Server Error`。
+
+### 原因
+数据库中缺少某些配置项，但代码直接访问数组键值，没有检查是否存在。
+
+### 解决方案
+
+编辑 `service/app/Http/Controllers/Api/V1/ConfigController.php`，为数组访问添加安全检查：
+
+```php
+// 修改前（可能报错）
+$agency_payment = json_decode($settings['agency_payment_status'], true);
+'cash_on_delivery' => (boolean)($cod['status'] == 1 ? true : false),
+
+// 修改后（安全访问）
+$agency_payment = json_decode($settings['agency_payment_status'] ?? '{}', true);
+'cash_on_delivery' => (boolean)(($cod['status'] ?? 0) == 1 ? true : false),
+```
+
+**修复位置**：
+- 第 86-89 行：`json_decode` 调用
+- 第 241-246 行：布尔值转换
+
+修改后清除缓存：
+```bash
+docker-compose exec app php /var/www/html/service/artisan cache:clear
+docker-compose exec app php /var/www/html/service/artisan config:clear
+```
+
+---
+
+## 问题十：npm install 依赖冲突
+
+### 现象
+运行 `npm install` 时报错：
+```
+npm error ERESOLVE unable to resolve dependency tree
+npm error peer react@"^16.0.0" from react-facebook-login@4.1.1
+```
+
+### 原因
+项目依赖的 `react-facebook-login` 只支持 React 16，但项目使用 React 18。
+
+### 解决方案
+
+使用 `--legacy-peer-deps` 参数强制安装：
+```bash
+cd app
+npm install --legacy-peer-deps
+```
+
+或修改 `package.json` 使用兼容的替代库。
+
+---
+
 ## 参考资源
 
 - [Laravel Storage 文档](https://laravel.com/docs/10.x/filesystem)

@@ -88,9 +88,11 @@ docker-compose exec app php artisan tinker --execute="\App\Models\Admin::create(
 
 ```bash
 cd app
-npm install
+npm install --legacy-peer-deps
 # 或 yarn install
 ```
+
+**注意**：由于项目依赖存在版本冲突（如 react-facebook-login 与 React 18），建议使用 `--legacy-peer-deps` 参数安装。
 
 ### 2. 配置环境变量
 
@@ -106,6 +108,11 @@ NEXT_PUBLIC_BASE_URL=http://localhost:8080
 NEXT_CLIENT_HOST_URL=http://localhost:3000
 ```
 
+**重要提示**：
+- `NEXT_PUBLIC_BASE_URL` 必须指向后端 API 地址（默认是 `http://localhost:8080`）
+- 如果后端 API 返回 HTML 而不是 JSON，前端会报错 `SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON`
+- 此时需要检查后端服务是否正常运行，或查看后端错误日志
+
 ### 3. 启动开发服务器
 
 ```bash
@@ -114,6 +121,10 @@ npm run dev
 ```
 
 访问前端：http://localhost:3000
+
+**常见问题**：
+- 如果端口 3000 被占用，Next.js 会自动尝试 3001、3002 等端口
+- 修改 `.env.development` 后需要重启开发服务器才能生效
 
 ### 4. 构建生产版本
 
@@ -368,3 +379,4 @@ docker-compose exec app php artisan tinker --execute="\App\Models\Admin::where('
 - [Next.js 官方文档](https://nextjs.org/docs)
 - [Docker 官方文档](https://docs.docker.com/)
 - [Docker Compose 官方文档](https://docs.docker.com/compose/)
+- [项目源码销售方文档](https://6ammart.app/documentation/)
