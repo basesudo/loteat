@@ -173,12 +173,50 @@ curl -s -o /dev/null -w '%{http_code}' http://localhost:3000
 
 ### Blank Page / 404 Errors for Static Files
 
-**Problem**: CSS and JS files return 404
+**Problem**: CSS and JS files return 404, or page shows blank/white screen
+
+**Root Cause**: Next.js generates a unique **build ID** for each build. The HTML file references static assets using this build ID in the path (e.g., `/_next/static/BUILD_ID/...`). If the Next.js application is not restarted after deployment, the server continues to serve old HTML that references the previous build's static files, which no longer exist.
+
+**Example Error**:
+```
+GET https://loteat.com/_next/static/chunks/580-23bdbb673d865692.js [404]
+GET https://loteat.com/_next/static/hvc6KqShoZj6ZH8Hdkz2P/_buildManifest.js [404]
+```
 
 **Solution**: 
-1. Ensure static folder is copied to standalone directory
-2. Check Nginx configuration includes `_next/static` location
-3. Verify the path in alias directive matches actual directory structure
+1. **CRITICAL**: Always restart the Next.js application after each deployment
+   ```bash
+   # Stop old process
+   pm2 delete your-app-name 2>/dev/null
+   # Or: pkill -f 'node server.js'
+   
+   # Wait for process to fully stop
+   sleep 2
+   
+   # Start new process
+   cd /www/wwwroot/your-app-domain.com
+   PORT=3000 pm2 start server.js --name 'your-app-name'
+   ```
+2. Ensure static folder is copied to standalone directory
+3. Check Nginx configuration includes `_next/static` location
+4. Verify the path in alias directive matches actual directory structure
+5. Clear browser cache or test in incognito mode to verify fix
+
+**Prevention**: Include automatic restart in your deployment script:
+```bash
+#!/bin/bash
+# deploy.sh
+
+# Build and upload...
+
+# Restart application (MANDATORY)
+pm2 delete your-app-name 2>/dev/null || true
+sleep 2
+PORT=3000 pm2 start server.js --name 'your-app-name'
+pm2 save
+
+echo "Deployment complete! Application restarted."
+```
 
 ### Application Not Starting
 
@@ -195,8 +233,30 @@ curl -s -o /dev/null -w '%{http_code}' http://localhost:3000
 
 **Solution**:
 1. Verify `NEXT_PUBLIC_BASE_URL` is set correctly
-2. Check backend API is accessible from the server
-3. Test API endpoint: `curl http://your-backend-domain.com/api/endpoint`
+2. **IMPORTANT**: Use HTTPS URLs in production to avoid Mixed Content errors
+   ```env
+   # Wrong - causes Mixed Content error
+   NEXT_PUBLIC_BASE_URL=http://api.your-domain.com
+   
+   # Correct
+   NEXT_PUBLIC_BASE_URL=https://api.your-domain.com
+   ```
+3. Check backend API is accessible from the server
+4. Test API endpoint: `curl https://your-backend-domain.com/api/endpoint`
+5. Ensure API domain has valid SSL certificate configured
+
+### Mixed Content Warnings
+
+**Problem**: Browser console shows "Mixed Content" warnings
+```
+Mixed Content: The page at 'https://your-domain.com/' was loaded over HTTPS, 
+but requested an insecure element 'http://api.your-domain.com/...'
+```
+
+**Solution**:
+1. Update all API URLs to use HTTPS in `.env.production`
+2. Ensure backend API supports HTTPS
+3. Configure SSL certificate for API subdomain if needed
 
 ## Common Commands
 
@@ -246,9 +306,40 @@ pm2 delete app-loteat 2>/dev/null
 PORT=3000 pm2 start server.js --name 'app-loteat'
 ```
 
+## Deployment Checklist
+
+Before considering deployment complete, verify:
+
+- [ ] Application builds successfully locally (`npm run build`)
+- [ ] Environment variables use HTTPS URLs (`NEXT_PUBLIC_BASE_URL=https://...`)
+- [ ] Static assets copied to standalone directory
+- [ ] Files uploaded to server successfully
+- [ ] **Application restarted after deployment** (CRITICAL)
+- [ ] PM2 process running and healthy (`pm2 status`)
+- [ ] Nginx configuration reloaded (`nginx -s reload`)
+- [ ] Application responds on localhost (`curl http://localhost:3000`)
+- [ ] Domain accessible via HTTPS (test in browser)
+- [ ] No 404 errors for static assets in browser console
+- [ ] API connections working (no Mixed Content errors)
+
+## Key Lessons Learned
+
+### 1. Always Restart After Deployment
+The most critical step that is easily forgotten: **Next.js MUST be restarted after each deployment** because each build generates a new unique build ID. The HTML references static assets using this build ID, so old processes serve HTML that points to non-existent static files.
+
+### 2. HTTPS Everywhere in Production
+Always use HTTPS URLs for all external resources (APIs, images, CDN) to avoid Mixed Content warnings and blocked requests.
+
+### 3. Verify Static File Serving
+Ensure Nginx properly serves `_next/static` files with correct cache headers for optimal performance.
+
+### 4. Test in Incognito Mode
+Browser caching can mask deployment issues. Always test in incognito/private mode or clear cache after deployment.
+
 ## Notes
 
 - Always test the application locally before deploying
 - Use PM2 for process management to ensure application restarts on crash
 - Configure log rotation to prevent disk space issues
 - Set up monitoring and alerting for production deployments
+- Document your deployment process for team members
